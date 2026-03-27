@@ -26,7 +26,7 @@ if (process.platform === 'linux') {
     electronApp = await electron.launch({
       args: ['.', '--no-sandbox'],
       cwd: root,
-      env: { ...process.env, NODE_ENV: 'development' },
+      env: { ...process.env, NODE_ENV: 'test' },
     })
     page = await electronApp.firstWindow()
 
@@ -37,28 +37,48 @@ if (process.platform === 'linux') {
   })
 
   afterAll(async () => {
-    await page.screenshot({ path: 'test/screenshots/e2e.png' })
-    await page.close()
-    await electronApp.close()
+    if (page && !page.isClosed()) {
+      await page.screenshot({ path: 'test/screenshots/e2e.png' })
+      await page.close()
+    }
+    if (electronApp) {
+      await electronApp.close()
+    }
   })
 
   describe('[electron-vite-react] e2e tests', async () => {
     test('startup', async () => {
       const title = await page.title()
-      expect(title).eq('Electron + Vite + React')
+      expect(title).eq('Plasma')
     })
 
     test('should be home page is load correctly', async () => {
-      const h1 = await page.$('h1')
-      const title = await h1?.textContent()
-      expect(title).eq('Electron + Vite + React')
+      expect(await page.getByText('Plasma', { exact: true }).isVisible()).eq(true)
+      expect(await page.getByText('Current Playlist').isVisible()).eq(true)
+      expect(await page.getByRole('heading', { level: 2, name: 'PLAYLIST' }).isVisible()).eq(true)
+      expect(await page.getByRole('heading', { level: 2, name: 'Item Editor + Slots' }).isVisible()).eq(true)
+      expect(await page.getByRole('heading', { level: 2, name: 'LIVE PLAYOUT' }).isVisible()).eq(true)
     })
 
-    test('should be count button can click', async () => {
-      const countButton = await page.$('button')
-      await countButton?.click()
-      const countValue = await countButton?.textContent()
-      expect(countValue).eq('count is 1')
+    test('should render preload-driven status and controls', async () => {
+      const shellText = await page.locator('main').textContent()
+      expect(shellText?.includes('save saved')).eq(true)
+      expect(shellText?.includes('external')).eq(true)
+      expect(shellText?.includes('mode')).eq(true)
+      expect(shellText?.includes('import playlist')).eq(true)
+      expect(await page.getByText('Playout transport').isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'import playlist', exact: true }).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'settings', exact: true }).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'help', exact: true }).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'play', exact: true }).nth(1).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'pause', exact: true }).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'prev', exact: true }).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'next', exact: true }).nth(1).isVisible()).eq(true)
+      expect(await page.getByRole('button', { name: 'stop', exact: true }).nth(1).isVisible()).eq(true)
+      expect(shellText?.includes('Progress')).eq(true)
+      expect(shellText?.includes('Countdown')).eq(true)
+      expect(shellText?.includes('External control')).eq(true)
+      expect(shellText?.includes('Recent external commands')).eq(true)
     })
   })
 }

@@ -1,118 +1,113 @@
-import { ipcRenderer, contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
+import {
+  PLASMA_API_NAMESPACE,
+  validateActivateItemPayload,
+  validateApplyImageProcessingPayload,
+  validateCreatePlaylistPayload,
+  validateDownloadSearchSelectionPayload,
+  validateImportLocalAssetsPayload,
+  validateImportPlaylistFilePayload,
+  validateSearchImagesPayload,
+  type PlasmaApi,
+} from '../../src/shared/plasma-api'
 
-// --------- Expose some API to the Renderer process ---------
-contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
-  },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
-  },
+const PLAYOUT_STATUS_EVENT = 'playout:statusChanged'
+const EXTERNAL_CONTROL_STATUS_EVENT = 'externalControl:statusChanged'
 
-  // You can expose other APTs you need here.
-  // ...
-})
+function invoke<Result>(channel: string, payload?: unknown) {
+  if (payload === undefined) {
+    return ipcRenderer.invoke(channel) as Promise<Result>
+  }
 
-// --------- Preload scripts loading ---------
-function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
-  return new Promise(resolve => {
-    if (condition.includes(document.readyState)) {
-      resolve(true)
-    } else {
-      document.addEventListener('readystatechange', () => {
-        if (condition.includes(document.readyState)) {
-          resolve(true)
-        }
-      })
-    }
-  })
+  return ipcRenderer.invoke(channel, payload) as Promise<Result>
 }
 
-const safeDOM = {
-  append(parent: HTMLElement, child: HTMLElement) {
-    if (!Array.from(parent.children).find(e => e === child)) {
-      return parent.appendChild(child)
-    }
-  },
-  remove(parent: HTMLElement, child: HTMLElement) {
-    if (Array.from(parent.children).find(e => e === child)) {
-      return parent.removeChild(child)
-    }
-  },
-}
+function subscribeToEvent<Payload>(channel: string, listener: (payload: Payload) => void) {
+  const subscription = (_event: unknown, payload: Payload) => listener(payload)
+  ipcRenderer.on(channel, subscription)
 
-/**
- * https://tobiasahlin.com/spinkit
- * https://connoratherton.com/loaders
- * https://projects.lukehaas.me/css-loaders
- * https://matejkustec.github.io/SpinThatShit
- */
-function useLoading() {
-  const className = `loaders-css__square-spin`
-  const styleContent = `
-@keyframes square-spin {
-  25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
-  50% { transform: perspective(100px) rotateX(180deg) rotateY(180deg); }
-  75% { transform: perspective(100px) rotateX(0) rotateY(180deg); }
-  100% { transform: perspective(100px) rotateX(0) rotateY(0); }
-}
-.${className} > div {
-  animation-fill-mode: both;
-  width: 50px;
-  height: 50px;
-  background: #fff;
-  animation: square-spin 3s 0s cubic-bezier(0.09, 0.57, 0.49, 0.9) infinite;
-}
-.app-loading-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #282c34;
-  z-index: 9;
-}
-    `
-  const oStyle = document.createElement('style')
-  const oDiv = document.createElement('div')
-
-  oStyle.id = 'app-loading-style'
-  oStyle.innerHTML = styleContent
-  oDiv.className = 'app-loading-wrap'
-  oDiv.innerHTML = `<div class="${className}"><div></div></div>`
-
-  return {
-    appendLoading() {
-      safeDOM.append(document.head, oStyle)
-      safeDOM.append(document.body, oDiv)
-    },
-    removeLoading() {
-      safeDOM.remove(document.head, oStyle)
-      safeDOM.remove(document.body, oDiv)
-    },
+  return () => {
+    ipcRenderer.off(channel, subscription)
   }
 }
 
-// ----------------------------------------------------------------------
-
-const { appendLoading, removeLoading } = useLoading()
-domReady().then(appendLoading)
-
-window.onmessage = (ev) => {
-  ev.data.payload === 'removeLoading' && removeLoading()
+const plasmaApi: PlasmaApi = {
+  app: {
+    getVersion() {
+      return invoke('app:getVersion')
+    },
+  },
+  playlists: {
+    list() {
+      return invoke('playlists:list')
+    },
+    create(payload) {
+      validateCreatePlaylistPayload(payload)
+      return invoke('playlists:create', payload)
+    },
+    importFile(payload) {
+      validateImportPlaylistFilePayload(payload)
+      return invoke('playlists:importFile', payload)
+    },
+  },
+  assets: {
+    importLocalImages(payload) {
+      validateImportLocalAssetsPayload(payload)
+      return invoke('assets:importLocalImages', payload)
+    },
+    searchImages(payload) {
+      validateSearchImagesPayload(payload)
+      return invoke('assets:searchImages', payload)
+    },
+    downloadSearchSelection(payload) {
+      validateDownloadSearchSelectionPayload(payload)
+      return invoke('assets:downloadSearchSelection', payload)
+    },
+  },
+  imageProcessing: {
+    applyTransforms(payload) {
+      validateApplyImageProcessingPayload(payload)
+      return invoke('imageProcessing:applyTransforms', payload)
+    },
+  },
+  playout: {
+    getStatus() {
+      return invoke('playout:getStatus')
+    },
+    play() {
+      return invoke('playout:play')
+    },
+    next() {
+      return invoke('playout:next')
+    },
+    stop() {
+      return invoke('playout:stop')
+    },
+    pause() {
+      return invoke('playout:pause')
+    },
+    resume() {
+      return invoke('playout:resume')
+    },
+    previous() {
+      return invoke('playout:previous')
+    },
+    activateItem(payload) {
+      validateActivateItemPayload(payload)
+      return invoke('playout:activateItem', payload)
+    },
+    subscribe(listener) {
+      return subscribeToEvent(PLAYOUT_STATUS_EVENT, listener)
+    },
+  },
+  externalControl: {
+    getStatus() {
+      return invoke('externalControl:getStatus')
+    },
+    subscribe(listener) {
+      return subscribeToEvent(EXTERNAL_CONTROL_STATUS_EVENT, listener)
+    },
+  },
 }
 
-setTimeout(removeLoading, 4999)
+contextBridge.exposeInMainWorld(PLASMA_API_NAMESPACE, plasmaApi)

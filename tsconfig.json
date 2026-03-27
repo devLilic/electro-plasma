@@ -18,10 +18,25 @@
     "baseUrl": "./",
     "paths": {
       "@/*": [
-        "src/*"
+        "src/renderer/*"
+      ],
+      "@domain/*": [
+        "src/renderer/domain/*"
+      ],
+      "@application/*": [
+        "src/renderer/application/*"
+      ],
+      "@infrastructure/*": [
+        "src/renderer/infrastructure/*"
+      ],
+      "@ui/*": [
+        "src/renderer/ui/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
       ]
-    },
+    }
   },
-  "include": ["src", "electron"],
+  "include": ["src", "electron", "test"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

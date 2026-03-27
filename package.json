@@ -1,9 +1,9 @@
 {
-  "name": "electron-vite-react",
+  "name": "electro-plasma",
   "version": "2.2.0",
   "main": "dist-electron/main/index.js",
-  "description": "Electron Vite React boilerplate.",
-  "author": "草鞋没号 <308487730@qq.com>",
+  "description": "Secure Electron foundation for Electro Plasma.",
+  "author": "Electro Plasma",
   "license": "MIT",
   "private": true,
   "debug": {
@@ -20,7 +20,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "electron-updater": "^6.3.9"
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.8.0",
+    "sharp": "^0.34.5",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",

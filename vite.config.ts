@@ -12,11 +12,17 @@ export default defineConfig(({ command }) => {
   const isServe = command === 'serve'
   const isBuild = command === 'build'
   const sourcemap = isServe || !!process.env.VSCODE_DEBUG
+  let hasStartedElectronForDev = false
 
   return {
     resolve: {
       alias: {
-        '@': path.join(__dirname, 'src')
+        '@': path.join(__dirname, 'src/renderer'),
+        '@domain': path.join(__dirname, 'src/renderer/domain'),
+        '@application': path.join(__dirname, 'src/renderer/application'),
+        '@infrastructure': path.join(__dirname, 'src/renderer/infrastructure'),
+        '@ui': path.join(__dirname, 'src/renderer/ui'),
+        '@shared': path.join(__dirname, 'src/shared'),
       },
     },
     plugins: [
@@ -25,11 +31,18 @@ export default defineConfig(({ command }) => {
         main: {
           // Shortcut of `build.lib.entry`
           entry: 'electron/main/index.ts',
-          onstart(args) {
+          async onstart(args) {
             if (process.env.VSCODE_DEBUG) {
               console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
             } else {
-              args.startup()
+              // On Windows, preload and main can finish close together during the first dev boot.
+              // Starting Electron twice causes vite-plugin-electron to taskkill a PID that has already exited.
+              if (hasStartedElectronForDev || process.electronApp) {
+                return
+              }
+
+              hasStartedElectronForDev = true
+              await args.startup()
             }
           },
           vite: {
@@ -47,6 +60,11 @@ export default defineConfig(({ command }) => {
           // Shortcut of `build.rollupOptions.input`.
           // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
           input: 'electron/preload/index.ts',
+          onstart({ reload }) {
+            if (process.electronApp) {
+              reload()
+            }
+          },
           vite: {
             build: {
               sourcemap: sourcemap ? 'inline' : undefined, // #332
@@ -72,5 +90,10 @@ export default defineConfig(({ command }) => {
       }
     })(),
     clearScreen: false,
+    build: {
+      rollupOptions: {
+        input: path.join(__dirname, 'index.html'),
+      },
+    },
   }
 })

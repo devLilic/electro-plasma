@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --plasma-bg: #020617;
+  --plasma-workspace: #0b1220;
+  --plasma-surface: #0f172a;
+  --plasma-panel: #111827;
+  --plasma-panel-secondary: #1f2937;
+  --plasma-panel-elevated: #243041;
+  --plasma-border: #334155;
+  --plasma-border-strong: #475569;
+  --plasma-divider: #263244;
+  --plasma-text: #f8fafc;
+  --plasma-text-secondary: #cbd5e1;
+  --plasma-text-muted: #94a3b8;
+  --plasma-text-disabled: #64748b;
+  --plasma-blue: #3b82f6;
+  --plasma-blue-hover: #2563eb;
+  --plasma-green: #22c55e;
+  --plasma-green-dark: #16a34a;
+  --plasma-amber: #f59e0b;
+  --plasma-red: #ef4444;
+  --plasma-external-connected: #38bdf8;
+  --plasma-external-listening: #818cf8;
+  --plasma-external-disconnected: #64748b;
+  --plasma-progress-track: #1e293b;
+  --plasma-progress-fill: #3b82f6;
+  --plasma-progress-remaining: #0f172a;
+  --plasma-radius-panel: 14px;
+  --plasma-radius-button: 10px;
+  --plasma-radius-control: 8px;
+  --plasma-radius-slot: 12px;
+  --plasma-shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.22);
+  --plasma-shadow-elevated: 0 10px 30px rgba(0, 0, 0, 0.28);
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--plasma-text);
+  background:
+    linear-gradient(180deg, rgba(59, 130, 246, 0.08), transparent 18%),
+    linear-gradient(180deg, var(--plasma-bg), var(--plasma-workspace) 52%, var(--plasma-surface));
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--plasma-bg);
+  color: var(--plasma-text);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@layer base {
+  body {
+    @apply bg-plasma-bg text-plasma-text;
+  }
+}
+
+@layer components {
+  .plasma-workspace {
+    background:
+      linear-gradient(180deg, rgba(59, 130, 246, 0.06), transparent 12%),
+      linear-gradient(180deg, var(--plasma-bg), var(--plasma-workspace));
+  }
+
+  .plasma-panel {
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid var(--plasma-border);
+    border-radius: var(--plasma-radius-panel);
+    box-shadow: var(--plasma-shadow-panel);
+  }
+
+  .plasma-panel-elevated {
+    background: rgba(36, 48, 65, 0.92);
+    border: 1px solid var(--plasma-border-strong);
+    border-radius: var(--plasma-radius-panel);
+    box-shadow: var(--plasma-shadow-elevated);
+  }
+
+  .plasma-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid var(--plasma-border);
+    border-radius: var(--plasma-radius-slot);
+  }
+
+  .plasma-divider {
+    border-color: var(--plasma-divider);
+  }
+
+  .plasma-heading {
+    @apply text-app-heading font-sans text-plasma-text;
+  }
+
+  .plasma-section-title {
+    @apply text-section-title font-sans text-plasma-text;
+  }
+
+  .plasma-item-title {
+    @apply text-item-title font-sans text-plasma-text;
+  }
+
+  .plasma-secondary-info {
+    @apply text-secondary-info font-medium text-plasma-textSecondary;
+  }
+
+  .plasma-micro-label {
+    @apply text-micro-label font-semibold uppercase tracking-[0.18em] text-plasma-textMuted;
+  }
+
+  .plasma-button {
+    @apply rounded-button px-4 py-2 text-sm font-semibold transition;
+  }
+
+  .plasma-progress-track {
+    background: var(--plasma-progress-track);
+  }
+
+  .plasma-progress-fill {
+    background: linear-gradient(90deg, var(--plasma-blue), var(--plasma-external-connected));
+  }
+}
